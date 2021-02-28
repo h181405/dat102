@@ -6,6 +6,7 @@ import java.util.Random;
 
 import no.hvl.dat102.exception.EmptyCollectionException;
 import no.hvl.dat102.mengde.adt.MengdeADT;
+import no.hvl.dat102.mengde.kjedet.KjedetMengde;
 
 public class TabellMengde<T> implements MengdeADT<T> {
 	// ADT-en Mengde implementert som tabell
@@ -69,17 +70,34 @@ public class TabellMengde<T> implements MengdeADT<T> {
 
 	@Override
 	public T fjern(T element) {
-		//TODO
-		// Søker etter og fjerner element. Returnerer null-ref ved ikke-funn
-
+		
 		if (erTom())
 			throw new EmptyCollectionException("mengde");
 
 		boolean funnet = false;
 		T svar = null;
-		/*
-		 * 
-		 */
+		
+		int index = -1;
+		
+		//lager en while loop som enter går gjennom alle elementer i tab, eller til funnet er lik true.
+		while(index < antall && !funnet) {
+			//sjekker om elementet i tab[index] er lik element,
+			//om den er lik sittes funnet = true og minker antall med 1
+			if(tab[index].equals(element)) {
+				funnet = true;
+				antall--;
+			} else {
+				//øker index med 1 hver gang while loopen kjøres og ikke elementet er funnet.
+				index++;
+			}
+		}
+		//setter elementet som skal slettes lik siste elementet i mengden.
+		//setter så siste elementet lik null.
+		if(funnet) {
+			tab[index] = tab[antall];	//skriver tab[antall] pga vi har allerede minket antallet med 1
+			tab[antall] = null;			//ellers måtte vi ha skrevet tab[antall - 1]
+		}
+		//returnerer den nye mengden
 		return svar;
 	}
 
@@ -110,14 +128,39 @@ public class TabellMengde<T> implements MengdeADT<T> {
 
 	@Override
 	public boolean equals(Object m2) {
-		//TODO
+		
 		boolean likeMengder = true;
 		T element;
-
-		/*
-		 * ...
-		 */
+		//sjekker om mengden er identisk med denne mengden, hvis ja returnerer true
+		if (this == m2) {
+			return true;
+		}
+		//sjekker om mengden er tom, hvis ja returnerer false
+		if (m2 == null) {
+			return false;
+		}
+		//sjekker om klassene er like, returnerer false hvis ikke
+		if (getClass() != m2.getClass()) {
+			return false;
+		} else {	//om klassene er like, sjekker vi at de inneholder like mange elementer, og returnerer false hvis ikke
+			MengdeADT<T> mengde2 = (TabellMengde<T>) m2;
+			if (this.antall != mengde2.antall()) {
+				likeMengder = false;
+			} else {	// om antallet er likt lager vi en iterator for å gå gjennom alle elementene i mengde2
+						//og sjekker om det eksisterer i denne mengden, returnerer false om ikke alle elementene er funnet og true ellers.
+				likeMengder = true;
+				
+				Iterator<T> teller = mengde2.oppramser();
+				while(teller.hasNext()) {
+					if(!this.inneholder(teller.next())) {
+						likeMengder = false;
+					}
+				}
+			}
+		}
+		//returnerer likeMengder
 		return likeMengder;
+			
 	}
 
 	@Override
@@ -143,10 +186,20 @@ public class TabellMengde<T> implements MengdeADT<T> {
 		//TODO
 		MengdeADT<T> begge = new TabellMengde<T>();
 		T element = null;
-		/*
-		 * ...
-		 * 
-		 */
+		
+		//setter inn alle elementer fra denne mengden til begge mengden.
+		for(int i=0;i<antall;i++) {
+			((TabellMengde<T>) begge).settInn(tab[i]);
+		}
+		//lager en iterator som går gjennom alle elementene i m2 og setter de inn hvis de ikke allerede eksisterer i denne mengden
+		Iterator<T> teller = m2.oppramser();
+		while (teller.hasNext()) {
+			element = teller.next();
+			if(!this.inneholder(element))
+				((TabellMengde<T>) begge).settInn(element);
+		}
+		
+		//returnerer mengden begge
 		return begge;
 	}//
 
@@ -154,9 +207,17 @@ public class TabellMengde<T> implements MengdeADT<T> {
 	public MengdeADT<T> snitt(MengdeADT<T> m2) {
 		MengdeADT<T> snittM = new TabellMengde<T>();
 		T element = null;
-		/*
-		 * ...
-		 */
+		
+		//bruker en iterator for å gå gjennom alle elementer i m2 sjekker om de eksisterer i denne mengden,
+		//de som eksisterer blir lagt til i snittM mengden
+		Iterator<T> teller = m2.oppramser();
+		while(teller.hasNext()) {
+			element = teller.next();
+			if(this.inneholder(element)) {
+				((TabellMengde<T>) snittM).settInn(element);
+			}
+		}
+		//returnerer mengden snittM
 		return snittM;
 	}
 
@@ -165,12 +226,17 @@ public class TabellMengde<T> implements MengdeADT<T> {
 		//TODO
 		MengdeADT<T> differensM = new TabellMengde<T>();
 		T element;
-		/*
-		 * Fyll ut
-		 * 
-		 * if (!m2.inneholder(element)) ((TabellMengde<T>) differensM).settInn(element);
-		 */
-
+		
+		//bruker en iterator for å gå igjennom alle elementer i denne mengden og sammenligner de med m2 mengden
+		//om elementene ikke eksisterer i m2 blir de lagt til i differensM mengden
+		Iterator<T> teller = this.oppramser();
+		while(teller.hasNext()) {
+			element = teller.next();
+			if(!m2.inneholder(element)) {
+				((TabellMengde<T>) differensM).settInn(element);
+			}
+		}
+		//returnerer differensM mengden
 		return differensM;
 	}
 
@@ -178,8 +244,16 @@ public class TabellMengde<T> implements MengdeADT<T> {
 	public boolean undermengde(MengdeADT<T> m2) {
 		//TODO
 		boolean erUnderMengde = true;
-		// ...
-		return false;
+		//bruker en iterator for å gå gjennom alle elementer i m2
+		//sjekker at denne mengden inneholder alle elementer i m2 og setter erUnderMengde lik false hvis ikke
+		Iterator<T> teller = m2.oppramser();
+		while(teller.hasNext()) {
+			if(!this.inneholder(teller.next())) {
+				erUnderMengde = false;
+			}
+		}
+		//returnerer erUnderMengde mengden
+		return erUnderMengde;
 	}
 
 	@Override
@@ -193,6 +267,14 @@ public class TabellMengde<T> implements MengdeADT<T> {
 		}
 		tab[antall] = element;
 		antall++;
+	}
+	//returnerer mengden som String
+	public String toString() {
+		String resultat = "";
+		for(int i = 0; i < antall; i++) {
+			resultat += tab[i].toString() + "\t";
+		}
+		return resultat;
 	}
 
 }// class
